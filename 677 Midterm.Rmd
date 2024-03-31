@@ -1,0 +1,256 @@
+---
+title: "MA 677 Midterm Project"
+output:
+  pdf_document: default
+  html_document: default
+author: Xingchen Zhang
+date: "2024-03-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Order Statistics
+## Uniform Distribution
+For a uniform distribution, the probability density function (PDF) is \( f(x) = \frac{1}{b-a} \) for \( a \leq x \leq b \) and zero otherwise. The cumulative distribution function (CDF) is \( F(x) = \frac{x-a}{b-a} \) for \( a \leq x \leq b \).
+
+The PDF of the \( k \)-th order statistic \( Y_k \) from a sample of size \( n \) is: 
+\[ f_{Y_k}(y) = \frac{n!}{(k-1)!(n-k)!} \left( F(y) \right)^{k-1} \left( 1 - F(y) \right)^{n-k} f(y) \]
+
+For the uniform distribution, this simplifies to: \[ f_{Y_k}(y) = \frac{n!}{(k-1)!(n-k)!} \left( \frac{y-a}{b-a} \right)^{k-1} \left( 1 - \frac{y-a}{b-a} \right)^{n-k} \frac{1}{b-a} \]
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+n <- 1000 
+num_simulations <- 10000
+a <- 0 
+b <- 1 
+
+order_stats_uniform <- matrix(nrow=num_simulations, ncol=5)
+
+for (i in 1:num_simulations) {
+  sample <- runif(n, a, b)
+  sample <- sort(sample)
+  order_stats_uniform[i,] <- sample[c(1, n/4, n/2, 3*n/4, n)]
+}
+
+library(ggplot2)
+
+order_stats_uniform_df <- as.data.frame(order_stats_uniform)
+names(order_stats_uniform_df) <- c("Minimum", "25th Percentile", "Median", "75th Percentile", "Maximum")
+
+order_stats_uniform_long <- reshape2::melt(order_stats_uniform_df)
+
+ggplot(order_stats_uniform_long, aes(x=value)) +
+  geom_histogram(aes(fill=variable), bins=30, alpha=0.6) +
+  facet_wrap(~variable, scales="free") +
+  theme_minimal() +
+  ggtitle("Uniform Distribution") +
+  xlab("Value") + ylab("Frequency")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+The histograms above represent the distribution of the minimum, 25th percentile, median, 75th percentile, and maximum order statistics from 10000 simulations of samples drawn from a uniform distribution between 0 and 1, each of size 1,000. For the minimum plot, the distribution of the minimum values aligns closely with the Beta distribution, which means the expected skew towards lower values. For the 25th percentile plot, it is more spread out than the minimum but still skewed towards lower values. For the median plot, the distribution is more symmetric. For the 75th percentile plot, it is similar to the 25th percentile plot, but it skewed towards higher values.
+
+
+## Exponential Distribution
+ For an exponential distribution with rate parameter \( \lambda \), the PDF is \( f(x) = \lambda e^{-\lambda x} \) for \( x \geq 0 \), and the CDF is \( F(x) = 1 - e^{-\lambda x} \).
+
+ The PDF of the \( k \)-th order statistic for the exponential distribution is: \[ f_{Y_k}(y) = \frac{n!}{(k-1)!(n-k)!} \left( 1 - e^{-\lambda y} \right)^{k-1} \left( e^{-\lambda y} \right)^{n-k} \lambda e^{-\lambda y} \]
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+lambda <- 1
+
+order_stats_exp <- matrix(nrow=num_simulations, ncol=5)
+
+for (i in 1:num_simulations) {
+  sample <- rexp(n, lambda)
+  sample <- sort(sample)
+  order_stats_exp[i,] <- sample[c(1, n/4, n/2, 3*n/4, n)]
+}
+# Convert the matrix to a data frame for ggplot
+order_stats_exp_df <- as.data.frame(order_stats_exp)
+names(order_stats_exp_df) <- c("Minimum", "25th Percentile", "Median", "75th Percentile", "Maximum")
+
+# Melt the data for plotting
+order_stats_exp_long <- reshape2::melt(order_stats_exp_df)
+
+# Plotting
+ggplot(order_stats_exp_long, aes(x=value)) +
+  geom_histogram(aes(fill=variable), bins=30, alpha=0.6) +
+  facet_wrap(~variable, scales="free") +
+  theme_minimal() +
+  ggtitle("Exponential Distribution") +
+  xlab("Value") + ylab("Frequency")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+From the histograms, we can see that the 25th percentile, the median, and the 75th percentile plots have similar distribution as uniform distribution, so we will just focus on minimum and maximum plots.The minimum plot shows that the distribution of minimum values is heavily skewed towards lower values, which fits the nature of exponential distribtion. For maximum plot, values are spread out and form a wide range.
+
+## Normal Distribution
+The normal distribution is more complex when it comes to order statistics because its PDF and CDF do not have simple closed forms. The distribution of order statistics for the normal distribution generally does not have a simple closed form and is often approached through approximations or numerical methods.
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+mu <- 0 
+sigma <- 1
+
+order_stats_norm <- matrix(nrow=num_simulations, ncol=5)
+
+for (i in 1:num_simulations) {
+  sample <- rnorm(n, mu, sigma)
+  sample <- sort(sample)
+  order_stats_norm[i,] <- sample[c(1, n/4, n/2, 3*n/4, n)]
+}
+order_stats_norm_df <- as.data.frame(order_stats_norm)
+names(order_stats_norm_df) <- c("Minimum", "25th Percentile", "Median", "75th Percentile", "Maximum")
+
+order_stats_norm_long <- reshape2::melt(order_stats_norm_df)
+
+ggplot(order_stats_norm_long, aes(x=value)) +
+  geom_histogram(aes(fill=variable), bins=30, alpha=0.6) +
+  facet_wrap(~variable, scales="free") +
+  theme_minimal() +
+  ggtitle("Normal Distribution") +
+  xlab("Value") + ylab("Frequency")
+
+```
+
+From the plots above, we can see that, for the minimum plot, it shows a skew towards more negative values, which is expected given the symmetric nature of the normal distribution. For the median plot, the medians are centered around the mean of the normal distribution and show a very narrow spread, indicating a strong consistency in the median values across samples. The 75th percentile plot skewed towards the positive values. The maximum plot shows that distribution skewed towards higher values, with a wider spread than the medians or percentiles closer to the mean.
+
+# Exponential Distribution
+## PDF of the Exponential Distribution
+
+The probability density function (PDF) of an exponential distribution is:
+
+\[ f(x; \lambda) = 
+\begin{cases} 
+\lambda e^{-\lambda x} & \text{for } x \geq 0, \\
+0 & \text{for } x < 0. 
+\end{cases} \]
+
+## Deriving the CDF
+
+The cumulative distribution function (CDF) is obtained by integrating the PDF from \(-\infty\) to \(x\):
+
+\[ F(x; \lambda) = \int_{-\infty}^{x} f(t; \lambda) dt \]
+
+For \(x \geq 0\), this becomes:
+
+\[ F(x; \lambda) = \int_{0}^{x} \lambda e^{-\lambda t} dt = [-e^{-\lambda t}]_{0}^{x} = 1 - e^{-\lambda x} \]
+
+## Moment Generating Function (MGF)
+
+The moment-generating function (MGF) of a random variable \(X\) is:
+
+\[ M_X(t) = E[e^{tX}] \]
+
+For the exponential distribution, we can derive the MGF:
+
+\[ M_X(t) = \int_{0}^{\infty} e^{tx} \lambda e^{-\lambda x} dx \]
+
+This integral can be evaluated to:
+
+\[ M_X(t) = \frac{\lambda}{\lambda - t} \quad \text{for } t < \lambda \]
+
+## Mean and Variance from the MGF
+
+The mean (\(\mu\)) and variance (\(\sigma^2\)) of the distribution can be found by differentiating the MGF:
+
+Mean: \( \mu = M_X'(0) \)
+Variance: \( \sigma^2 = M_X''(0) - [M_X'(0)]^2 \)
+
+The mean and variance of the exponential distribution are calculated as:
+
+Mean (\( \mu \)): \( \frac{1}{\lambda} \)
+
+Variance (\( \sigma^2 \)): \( \frac{1}{\lambda^2} \)
+
+For higher moments about the mean:
+
+Third moment: \( \frac{2}{\lambda^3} \)
+
+Fourth moment: \( \frac{9}{\lambda^4} \)
+
+Fifth moment: \( \frac{44}{\lambda^5} \)
+
+## Interpretation of the Moments
+
+The mean represents the average time between events in the Poisson process modeled by the exponential distribution. The variance gives a measure of the spread of the time between events around the mean time. Higher moments provide additional details about the shape of the distribution. For the exponential distribution, the positive third moment indicates right-skewness, meaning that there are more large values and the distribution tail extends to the right. The fourth and higher moments continue to describe the distribution's tail behavior and peak sharpness.
+
+## Relationship to Other Distributions
+
+The exponential distribution is closely related to other distributions, particularly with Poisson distribution. For example, the sum of \( n \) independent exponentially distributed random variables follows a Gamma distribution with shape parameter \( n \) and rate \( \lambda \).
+
+Using the MGF, this relationship can be justified. The MGF of the sum of independent random variables is the product of their individual MGFs. Since the MGF of an exponential distribution is \( \frac{\lambda}{\lambda - t} \), the MGF of the sum of \( n \) such exponential random variables. For example, a Gamma distribution with parameters \( n \) and \( \lambda \)) would be \( \left(\frac{\lambda}{\lambda - t}\right)^n \), demonstrating the connection between these distributions.
+
+# Irrigration
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+rotation_times <- c(
+  21.80086, 23.74087, 24.6675, 22.1376, 21.4186,
+  23.80423, 23.11184, 24.23174, 24.826, 21.44181,
+  22.09314, 22.96205, 22.27362, 23.23669, 22.05037,
+  21.8075, 22.5501, 24.55148, 23.21969, 24.36872,
+  24.56083, 23.8828, 21.84536, 21.90287, 21.55993,
+  22.91966, 22.74965, 24.86386, 21.56766, 24.81992,
+  22.77892, 21.23745, 22.1006, 21.12459, 21.05793
+)
+
+mean_rotation_time <- mean(rotation_times)
+radius <- 1320
+circumference <- pi * radius
+
+mean_speed <- circumference / mean_rotation_time
+
+std_dev <- sd(rotation_times)
+n <- length(rotation_times)
+se <- std_dev / sqrt(n)
+
+alpha <- 0.1 
+df <- n - 1
+critical_value <- qt(alpha / 2, df, lower.tail = FALSE)
+
+margin_of_error <- critical_value * se
+
+lower_bound <- mean_speed - margin_of_error
+upper_bound <- mean_speed + margin_of_error
+
+cat("90% Confidence Interval: [",
+    lower_bound, ", ", upper_bound, "] feet per rotation time unit\n")
+
+```
+
+## For Data Scientists
+
+The analysis begins with the data of rotation times recorded in `rot35.txt`, which refers to the time it takes for the irrigation system to complete one full rotation. Our goal is to estimate the speed of the arm at its outermost point with 90% confidence interval.
+
+We first summarize the data by calculating the mean rotation time. The speed of the arm is determined by the distance it travels divided by the time it takes to travel that distance. The path of the outermost point of the arm forms a circle, and the distance traveled in one rotation is its circumference. We calculate this using the known length of the arm plus. By dividing the circumference by the mean rotation time, we estimate the mean speed of the outermost point of the arm. This gives us a central estimate but doesn't account for variability in the rotation times.
+
+Next, we calculate the standard deviation of the rotation times and then the standard error of the mean speed. The standard error provides a measure of how much we expect our estimate of the mean speed to vary from one sample of rotation times to another. We then use the t-distribution to calculate a 90% confidence interval for the mean speed.
+
+The result shows that 90% of the speed of the rotating arm at the outer wheels falls between 181.2425 to 181.9444 feet per rotation time unit.
+
+## For Farmers
+
+The speed we are calculating tells us how quickly the outer edge of your irrigation system moves. This shows how long each part of your field receives water. In other words, how well your crops are watered.
+
+The result of this analysis helps you understand the range within which the true average speed likely falls. If the interval is wide, there's more uncertainty about the exact speed, which might affect the uniformity of water distribution. A narrower interval means you can be more certain about the speed and, by extension, how evenly water is distributed.
+
+By knowing this speed range, you can make more informed decisions about setting up your irrigation schedule. For example, if the speed is slower than you thought, you might need to run the system longer to ensure all areas receive enough water. Conversely, a faster speed might mean you can water more efficiently, saving time and possibly reducing water use.
+
+This result also helps you manage risks related to under or over-watering. By understanding the possible range of speeds, you can adjust your irrigation practices to ensure your crops receive the right amount of water, even considering the variability in how fast the system moves.
+
+
+
+
